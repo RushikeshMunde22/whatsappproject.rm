@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Architecture - Team Lakshya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Helvet+Neue&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fff; overflow-x: hidden; }
+        .wa-green { color: #25D366; }
+        .wa-bg-green { background-color: #25D366; }
+        .wa-dark { background-color: #111b21; }
+        
+        /* Hero Section Gradient */
+        .hero-bg {
+            background-color: #111b21;
+            background-image: radial-gradient(circle at top right, #00a884 0%, transparent 40%),
+                              radial-gradient(circle at bottom left, #111b21 0%, #0b141a 100%);
+        }
+
+        /* Simulator Styles */
+        .chat-bg {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 15h10v10H15zM65 65h10v10H65zM80 20h5v5h-5zM20 80h5v5h-5z' fill='%23d1d7db' fill-opacity='0.4'/%3E%3C/svg%3E");
+            background-color: #efeae2;
+        }
+
+        .packet {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: #25D366;
+            border: 2px solid white;
+            border-radius: 50%;
+            z-index: 50;
+            box-shadow: 0 0 10px rgba(37, 211, 102, 0.8);
+            display: none;
+            transition: all 0.5s linear; /* Faster animation */
+        }
+
+        .server-comp {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .server-comp:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #25D366;
+        }
+
+        /* Roadmap Line */
+        .roadmap-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+
+        /* Poster Cards */
+        .poster-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .poster-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Explainer Highlight */
+        .explainer-highlight {
+            position: relative;
+            z-index: 40;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85);
+            border: 2px solid #25D366;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Hero Phone Animations */
+        @keyframes message-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .hero-msg {
+            animation: message-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+        }
+        .hero-msg:nth-child(1) { animation-delay: 0.5s; }
+        .hero-msg:nth-child(2) { animation-delay: 1.5s; }
+        .hero-msg:nth-child(3) { animation-delay: 2.5s; }
+        .hero-msg:nth-child(4) { animation-delay: 3.5s; }
+    </style>
+</head>
+<body class="text-gray-900">
+
+    <!-- HEADER / NAV -->
+    <header class="fixed w-full z-50 bg-[#111b21] text-white shadow-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="ph-fill ph-whatsapp-logo text-4xl text-[#25D366]"></i>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-3xl tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#25D366] to-white">TEAM LAKSHYA</span>
+                    <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold">WhatsApp Architecture Project</span>
+                </div>
+            </div>
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+                <a href="#simulator" class="hover:text-[#25D366] transition">Simulation</a>
+                <a href="#roadmap" class="hover:text-[#25D366] transition">Journey</a>
+                <a href="#business" class="hover:text-[#25D366] transition">Business Model</a>
+                <a href="#knowledge" class="hover:text-[#25D366] transition">Tech Stack</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero-bg text-white pt-32 pb-20 px-4 min-h-[70vh] flex items-center">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <h1 class="text-5xl md:text-7xl font-bold leading-tight">
+                    Simple. Secure.<br>
+                    <span class="text-[#25D366]">Reliable Messaging.</span>
+                </h1>
+                <p class="text-xl text-gray-300 max-w-lg leading-relaxed">
+                    Connecting billions of users with Erlang, Mnesia, and FreeBSD. Discover the backend architecture behind the world's most popular chat app.
+                </p>
+                <div class="flex gap-4 pt-6">
+                    <button onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})" class="bg-[#25D366] text-[#111b21] px-8 py-4 rounded-full font-bold text-lg hover:bg-[#1ebc57] hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] transition transform hover:-translate-y-1">
+                        Run Simulation
+                    </button>
+                    <button onclick="document.getElementById('business').scrollIntoView({behavior: 'smooth'})" class="border border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition">
+                        How it Earns?
+                    </button>
+                </div>
+            </div>
+            
+            <!-- CREATIVE PHONE UI -->
+            <div class="relative hidden md:block flex justify-end">
+                <div class="w-[320px] h-[640px] bg-white rounded-[40px] border-[10px] border-[#2c3e50] shadow-2xl overflow-hidden relative transform rotate-[-2deg] hover:rotate-0 transition duration-500">
+                    <!-- Notch -->
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-[#2c3e50] rounded-b-xl z-20"></div>
+                    
+                    <!-- WA Header -->
+                    <div class="bg-[#008069] h-28 w-full flex items-end p-4 pb-3 shadow-md relative z-10">
+                        <div class="flex items-center gap-3 w-full">
+                            <i class="ph-bold ph-arrow-left text-white"></i>
+                            <div class="w-10 h-10 rounded-full bg-gray-300 border-2 border-white overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+                            </div>
+                            <div class="flex-1 text-white">
+                                <div class="font-bold text-sm">Rushikesh</div>
+                                <div class="text-[10px] opacity-80">Online</div>
+                            </div>
+                            <div class="flex gap-4 text-white text-lg">
+                                <i class="ph-bold ph-video-camera"></i>
+                                <i class="ph-bold ph-phone"></i>
+                                <i class="ph-bold ph-dots-three-vertical"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Area -->
+                    <div class="chat-bg h-full p-4 space-y-4 pt-6">
+                        <div class="hero-msg bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] text-sm relative">
+                            <span class="text-[#111b21]">How does WhatsApp handle 100 Billion messages a day? 🤔</span>
+                            <span class="text-[10px] text-gray-500 absolute bottom-1 right-2">10:00 AM</span>
+                        </div>
+                        
+                        <div class="hero-msg bg-[#d9fdd3] p-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] ml-auto text-sm relative">
+                            <span class="text-[#111b21]">It uses <strong>Erlang</strong>! It's designed for massive concurrency. ⚡</span>
+                            <span class="text-[10px] text-gray-500 absolute bottom-1 right-2">10:01 AM <i class="ph-bold ph-checks text-blue-500"></i></span>
+                        </div>
+
+                        <div class="hero-msg bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] text-sm relative">
+                            <span class="text-[#111b21]">Is it secure?</span>
+                            <span class="text-[10px] text-gray-500 absolute bottom-1 right-2">10:01 AM</span>
+                        </div>
+
+                        <div class="hero-msg bg-[#d9fdd3] p-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] ml-auto text-sm relative">
+                            <span class="text-[#111b21]">Yes! go and explore Created under the visionary guidance of Prof.Sanjay Dhage sir <strong>Signal Protocol</strong> encrypts everything end-to-end. 🔒</span>
+                            <span class="text-[10px] text-gray-500 absolute bottom-1 right-2">10:02 AM <i class="ph-bold ph-checks text-blue-500"></i></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Input Area -->
+                    <div class="absolute bottom-0 w-full bg-[#f0f2f5] p-2 flex items-center gap-2">
+                        <div class="bg-white rounded-full flex-1 h-10 flex items-center px-4 text-gray-400 text-sm shadow-sm">
+                            Type a message...
+                        </div>
+                        <div class="w-10 h-10 bg-[#008069] rounded-full flex items-center justify-center text-white shadow-md">
+                            <i class="ph-bold ph-microphone"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SIMULATOR SECTION -->
+    <section id="simulator" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Live Architecture Simulator</h2>
+                    <p class="text-gray-500 mt-2">Send a message to see how it travels through the server stack.</p>
+                </div>
+                <div class="flex gap-3">
+                    <div id="voice-status" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-md text-xs font-mono flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-gray-400"></div> Voice Loading...
+                    </div>
+                    <button id="explain-btn" onclick="startExplainer()" class="bg-[#111b21] text-white px-6 py-2 rounded-full font-bold hover:bg-gray-800 transition shadow-lg flex items-center gap-2 disabled:opacity-50">
+                        <i class="ph-fill ph-play-circle text-xl"></i> Auto-Explain
+                    </button>
+                </div>
+            </div>
+
+            <!-- SIM GRID -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+                
+                <!-- ALICE -->
+                <div id="box-alice" class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-[500px] flex flex-col relative">
+                    <div class="bg-[#f0f2f5] p-4 border-b flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">A</div>
+                        <div>
+                            <div class="font-bold text-gray-800">Alice</div>
+                            <div class="text-xs text-green-600 font-bold">Online</div>
+                        </div>
+                    </div>
+                    <div id="alice-chat" class="chat-bg flex-1 p-4 overflow-y-auto space-y-2"></div>
+                    <div class="p-3 bg-white border-t flex gap-2">
+                        <input id="msg-input" type="text" placeholder="Type a message..." class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-[#25D366] outline-none" onkeypress="handleEnter(event)">
+                        <button onclick="sendMessage()" class="bg-[#25D366] text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#1ebc57] transition shadow-md">
+                            <i class="ph-bold ph-paper-plane-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SERVER -->
+                <div id="box-server" class="bg-[#111b21] rounded-2xl shadow-2xl overflow-hidden h-[500px] flex flex-col relative border border-gray-700">
+                    <div id="packet" class="packet"></div>
+                    
+                    <div class="bg-[#202c33] p-3 border-b border-gray-700 flex justify-between items-center text-gray-400 text-xs font-mono">
+                        <span><i class="ph-fill ph-hard-drives text-[#25D366]"></i> WHATSAPP_SERVER_CLUSTER</span>
+                        <span class="text-[#25D366]">● ACTIVE</span>
+                    </div>
+
+                    <div class="p-6 flex flex-col justify-center gap-4 flex-1 relative">
+                        <!-- Connecting Line -->
+                        <div class="absolute left-1/2 top-10 bottom-10 w-0.5 bg-gray-800 -translate-x-1/2"></div>
+
+                        <!-- Gateway -->
+                        <div onclick="showModal('gateway')" id="comp-gateway" class="server-comp bg-[#2a3942] p-4 rounded-xl border border-gray-600 relative z-10 flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl">
+                                <i class="ph-fill ph-shield-check"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold text-sm">Gateway (Ejabberd)</h3>
+                                <p class="text-gray-400 text-xs">Auth & Encryption</p>
+                            </div>
+                        </div>
+
+                        <!-- Mnesia -->
+                        <div onclick="showModal('mnesia')" id="comp-mnesia" class="server-comp bg-[#2a3942] p-4 rounded-xl border border-gray-600 relative z-10 flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-2xl">
+                                <i class="ph-fill ph-arrows-split"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold text-sm">Mnesia DB</h3>
+                                <p class="text-gray-400 text-xs">Routing Table (RAM)</p>
+                            </div>
+                        </div>
+
+                        <!-- Cassandra -->
+                        <div onclick="showModal('cassandra')" id="comp-cassandra" class="server-comp bg-[#2a3942] p-4 rounded-xl border border-gray-600 relative z-10 flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center text-2xl">
+                                <i class="ph-fill ph-database"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold text-sm">Cassandra</h3>
+                                <p class="text-gray-400 text-xs">Message Archive</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="logs" class="h-32 bg-black p-3 font-mono text-[10px] text-green-400 overflow-y-auto border-t border-gray-700">
+                        <div class="opacity-50">> Server Cluster Initialized...</div>
+                    </div>
+                </div>
+
+                <!-- BOB -->
+                <div id="box-bob" class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-[500px] flex flex-col relative">
+                    <div class="absolute top-3 right-3 z-20">
+                        <button onclick="toggleBob()" id="bob-status-btn" class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold border border-green-200">
+                            Status: Online
+                        </button>
+                    </div>
+                    <div class="bg-[#f0f2f5] p-4 border-b flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold">B</div>
+                        <div>
+                            <div class="font-bold text-gray-800">Bob</div>
+                            <div class="text-xs text-gray-500">Receiver</div>
+                        </div>
+                    </div>
+                    
+                    <div id="bob-overlay" class="absolute inset-0 bg-gray-900/90 z-10 flex flex-col items-center justify-center text-white hidden backdrop-blur-sm">
+                        <i class="ph-fill ph-moon-stars text-4xl mb-2 text-gray-400"></i>
+                        <span class="font-bold">Bob is Offline</span>
+                    </div>
+
+                    <div id="bob-chat" class="chat-bg flex-1 p-4 overflow-y-auto space-y-2"></div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITECTURE ROADMAP -->
+    <section id="roadmap" class="py-16 bg-white border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-12">The Message Journey</h2>
+            
+            <div class="relative flex flex-col md:flex-row justify-between items-center gap-8 max-w-5xl mx-auto">
+                <div class="roadmap-line hidden md:block"></div>
+
+                <!-- Step 1 -->
+                <div class="relative z-10 bg-white p-2">
+                    <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl border-4 border-white shadow-lg mx-auto mb-4">
+                        <i class="ph-fill ph-device-mobile"></i>
+                    </div>
+                    <h3 class="font-bold">Sender</h3>
+                    <p class="text-sm text-gray-500">Signal Protocol<br>Encryption</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative z-10 bg-white p-2">
+                    <div class="w-16 h-16 rounded-full bg-[#111b21] text-[#25D366] flex items-center justify-center text-2xl border-4 border-white shadow-lg mx-auto mb-4">
+                        <i class="ph-fill ph-shield-check"></i>
+                    </div>
+                    <h3 class="font-bold">Gateway</h3>
+                    <p class="text-sm text-gray-500">Authentication<br>& Decryption</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative z-10 bg-white p-2">
+                    <div class="w-16 h-16 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-2xl border-4 border-white shadow-lg mx-auto mb-4">
+                        <i class="ph-fill ph-arrows-split"></i>
+                    </div>
+                    <h3 class="font-bold">Mnesia</h3>
+                    <p class="text-sm text-gray-500">Checks User<br>Status (Online?)</p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="relative z-10 bg-white p-2">
+                    <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl border-4 border-white shadow-lg mx-auto mb-4">
+                        <i class="ph-fill ph-check-circle"></i>
+                    </div>
+                    <h3 class="font-bold">Receiver</h3>
+                    <p class="text-sm text-gray-500">Decryption &<br>Display</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BUSINESS & SECURITY FAQ -->
+    <section id="business" class="py-20 bg-white border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-4">Business & Security</h2>
+            <p class="text-center text-gray-500 mb-12">How WhatsApp works as a business and keeps you safe.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- Earn Money -->
+                <div class="bg-gray-50 rounded-2xl p-8 border border-gray-100">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl">
+                            <i class="ph-fill ph-currency-dollar"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">How to Earn Money?</h3>
+                    </div>
+                    <ul class="space-y-4 text-gray-600">
+                        <li class="flex items-start gap-3">
+                            <i class="ph-bold ph-check-circle text-green-500 mt-1"></i>
+                            <div>
+                                <span class="font-bold text-gray-900">WhatsApp Business API:</span> 
+                                Charging large enterprises (Banks, Airlines) to send automated notifications and customer support messages.
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="ph-bold ph-check-circle text-green-500 mt-1"></i>
+                            <div>
+                                <span class="font-bold text-gray-900">Click-to-WhatsApp Ads:</span> 
+                                Ads on Facebook and Instagram that open a chat directly in WhatsApp. Businesses pay for these leads.
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="ph-bold ph-check-circle text-green-500 mt-1"></i>
+                            <div>
+                                <span class="font-bold text-gray-900">WhatsApp Pay:</span> 
+                                Transaction fees on peer-to-peer or peer-to-merchant payments in specific regions (e.g., India, Brazil).
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Safety -->
+                <div class="bg-gray-50 rounded-2xl p-8 border border-gray-100">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl">
+                            <i class="ph-fill ph-lock-key"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Is it Safe?</h3>
+                    </div>
+                    <ul class="space-y-4 text-gray-600">
+                        <li class="flex items-start gap-3">
+                            <i class="ph-bold ph-shield-check text-blue-500 mt-1"></i>
+                            <div>
+                                <span class="font-bold text-gray-900">End-to-End Encryption:</span> 
+                                Powered by the Signal Protocol. Only you and the recipient have the "keys" to unlock messages. Not even WhatsApp can read them.
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="ph-bold ph-shield-check text-blue-500 mt-1"></i>
+                            <div>
+                                <span class="font-bold text-gray-900">No Server Storage:</span> 
+                                Messages are deleted from the server immediately after delivery. They only exist on the users' devices.
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="ph-bold ph-shield-check text-blue-500 mt-1"></i>
+                            <div>
+                                <span class="font-bold text-gray-900">Forward Secrecy:</span> 
+                                Each message has a unique key. Even if a hacker steals a key, they can only read one message, not the whole chat.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTIONS -->
+    <section id="features" class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Core Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Calls -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-2xl mb-4">
+                        <i class="ph-fill ph-phone-call"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Voice & Video Calls</h3>
+                    <p class="text-gray-600 text-sm">
+                        Uses VoIP (Voice over IP). While text uses TCP for reliability, calls use UDP (User Datagram Protocol) for speed, prioritizing real-time delivery over perfect quality.
+                    </p>
+                </div>
+
+                <!-- Status -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 text-2xl mb-4">
+                        <i class="ph-fill ph-circle-dashed"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Status Updates</h3>
+                    <p class="text-gray-600 text-sm">
+                        Ephemeral data stored in Cassandra with a TTL (Time-To-Live) of 24 hours. After that, the database automatically deletes the entry.
+                    </p>
+                </div>
+
+                <!-- Communities -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl mb-4">
+                        <i class="ph-fill ph-users-three"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Communities</h3>
+                    <p class="text-gray-600 text-sm">
+                        Handling groups of 1000+ users requires efficient "fan-out". Erlang sends a single message to the server, which then duplicates it for every member efficiently.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- KNOWLEDGE POSTERS -->
+    <section id="knowledge" class="py-16 bg-[#111b21] text-white">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-12 text-center">The Tech Stack</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Erlang -->
+                <div onclick="showModal('erlang')" class="poster-card bg-[#202c33] p-6 rounded-xl border border-gray-700 cursor-pointer">
+                    <div class="h-32 bg-gray-900 rounded-lg mb-4 flex items-center justify-center text-red-500 text-5xl">
+                        <i class="ph-fill ph-code"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Erlang</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed">The language of telecoms. Designed for massive concurrency and fault tolerance.</p>
+                </div>
+
+                <!-- Mnesia -->
+                <div onclick="showModal('mnesia')" class="poster-card bg-[#202c33] p-6 rounded-xl border border-gray-700 cursor-pointer">
+                    <div class="h-32 bg-gray-900 rounded-lg mb-4 flex items-center justify-center text-yellow-500 text-5xl">
+                        <i class="ph-fill ph-tree-structure"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Mnesia</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed">A distributed, soft real-time database written in Erlang. Extremely fast routing.</p>
+                </div>
+
+                <!-- FreeBSD -->
+                <div onclick="showModal('freebsd')" class="poster-card bg-[#202c33] p-6 rounded-xl border border-gray-700 cursor-pointer">
+                    <div class="h-32 bg-gray-900 rounded-lg mb-4 flex items-center justify-center text-red-600 text-5xl">
+                        <i class="ph-fill ph-desktop-tower"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">FreeBSD</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed">The OS powering the servers. Known for its advanced networking stack.</p>
+                </div>
+
+                <!-- YAWS -->
+                <div onclick="showModal('yaws')" class="poster-card bg-[#202c33] p-6 rounded-xl border border-gray-700 cursor-pointer">
+                    <div class="h-32 bg-gray-900 rounded-lg mb-4 flex items-center justify-center text-blue-500 text-5xl">
+                        <i class="ph-fill ph-globe"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">YAWS</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed">"Yet Another Web Server". A high-performance web server for Erlang.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#0b141a] text-gray-400 py-16 border-t border-gray-800 text-center">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-3xl font-extrabold text-white tracking-widest uppercase mb-2">Team Lakshya</h2>
+            <p class="text-sm text-[#25D366] mb-10 font-bold tracking-wider">PROJECT CONTRIBUTORS</p>
+            
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-4 text-xl font-bold text-gray-300 leading-relaxed max-w-3xl mx-auto">
+                <span class="hover:text-white transition">Rushikesh Munde</span> •
+                <span class="hover:text-white transition">Shravan Bhagwat</span> •
+                <span class="hover:text-white transition">Aditya Pyadewad</span> •
+                <span class="hover:text-white transition">Tejas Lokhande</span> •
+                <span class="hover:text-white transition">Vaibhav Malkar</span> •
+                <span class="hover:text-white transition">Pratik Bade</span> •
+                <span class="hover:text-white transition">Shweta Pawar</span> •
+                <span class="hover:text-white transition">Gauri Kotalwar</span> •
+                <span class="hover:text-white transition">Dhanashree Mandhare</span> •
+                <span class="hover:text-white transition">Dhanvantri Shinde</span>
+            </div>
+
+            <div class="mt-12 pt-8 border-t border-gray-800 flex justify-center items-center flex-col gap-2">
+                <p class="text-xs opacity-50">Educational Simulation. Not affiliated with Meta.</p>
+                <span class="text-xs text-[#25D366] font-mono opacity-80">@rushikesh</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL -->
+    <div id="modal" class="hidden fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4">
+        <div class="bg-white max-w-lg w-full rounded-2xl p-8 relative shadow-2xl">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black">
+                <i class="ph-bold ph-x text-xl"></i>
+            </button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        // --- CONTENT DATA ---
+        const content = {
+            gateway: { title: "Gateway", text: "The entry point. It handles thousands of simultaneous connections. It decrypts the message header to find out who the recipient is, but cannot read the message content due to End-to-End Encryption." },
+            mnesia: { title: "Mnesia DB", text: "Erlang's built-in database. WhatsApp uses it as a routing table. It answers one question: 'Where is Bob connected?' It runs in RAM for extreme speed." },
+            cassandra: { title: "Cassandra", text: "Used for storing offline messages and message history. If Bob is offline, the message waits here. Once delivered, it is deleted from the server (for privacy)." },
+            erlang: { title: "Erlang", text: "A programming language built by Ericsson for phone switches. It uses lightweight 'processes' (millions per server) instead of threads, making it crash-proof." },
+            freebsd: { title: "FreeBSD", text: "WhatsApp runs on FreeBSD, not Linux. They tuned the OS networking stack to handle millions of open TCP connections on a single machine." },
+            yaws: { title: "YAWS", text: "A web server written in Erlang. It can handle more concurrent connections than Apache or Nginx in specific high-load scenarios." }
+        };
+
+        // --- STATE ---
+        let isBobOnline = true;
+        let offlineQueue = [];
+        let isExplaining = false;
+        let audioBuffers = {}; // Store pre-loaded audio
+        let audioContext = null;
+
+        // --- AUDIO PRE-LOADING SYSTEM (FAST RESPONSE) ---
+        const explanationSteps = [
+            "Step 1. Alice sends a message.",
+            "The message is encrypted on the device.",
+            "Step 2. The Gateway authenticates the user.",
+            "Step 3. Mnesia checks if Bob is online.",
+            "Step 4. Routing the message to Bob.",
+            "Delivered. The server deletes the message."
+        ];
+
+        async function initAudio() {
+            const statusEl = document.getElementById('voice-status');
+            
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn("AudioContext not supported");
+                statusEl.innerHTML = "Audio Not Supported";
+                return;
+            }
+
+            const apiKey = ""; // Runtime Key
+
+            let loadedCount = 0;
+            
+            // Parallel fetching for speed
+            const promises = explanationSteps.map(async (text, index) => {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [{ parts: [{ text: text }] }],
+                        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } } }
+                    };
+
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const base64 = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                    
+                    if(base64) {
+                        const buffer = base64ToArrayBuffer(base64);
+                        const wav = pcmToWav(buffer, 24000);
+                        audioBuffers[index] = await audioContext.decodeAudioData(wav);
+                        loadedCount++;
+                        if (statusEl) {
+                             statusEl.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div> Loading Voice ${Math.round((loadedCount/explanationSteps.length)*100)}%`;
+                        }
+                    }
+                } catch(e) { 
+                    console.warn(`Voice load failed for step ${index}:`, e); 
+                }
+            });
+
+            await Promise.all(promises);
+            
+            if (statusEl) {
+                if (loadedCount > 0) {
+                    statusEl.innerHTML = `<div class="w-2 h-2 rounded-full bg-green-500"></div> Voice Ready`;
+                    statusEl.classList.remove('bg-gray-200', 'text-gray-600');
+                    statusEl.classList.add('bg-green-100', 'text-green-800');
+                } else {
+                    statusEl.innerHTML = `Voice Unavailable`;
+                }
+            }
+        }
+
+        // Initialize audio on first user interaction (browser policy) or after small delay
+        window.addEventListener('click', () => { if(!audioContext) initAudio(); }, { once: true });
+        setTimeout(() => { if(!audioContext) initAudio(); }, 2000);
+
+
+        // --- HELPER FUNCTIONS ---
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+            const blockAlign = numChannels * bitsPerSample / 8;
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+            const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+            writeString(0, 'RIFF'); view.setUint32(4, 36 + pcmData.byteLength, true); writeString(8, 'WAVE'); writeString(12, 'fmt ');
+            view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, numChannels, true); view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true); view.setUint16(32, blockAlign, true); view.setUint16(34, bitsPerSample, true); writeString(36, 'data');
+            view.setUint32(40, pcmData.byteLength, true);
+            const wavBuffer = new Uint8Array(wavHeader.byteLength + pcmData.byteLength);
+            wavBuffer.set(new Uint8Array(wavHeader), 0);
+            wavBuffer.set(new Uint8Array(pcmData), wavHeader.byteLength);
+            return wavBuffer.buffer;
+        }
+
+        function playBuffer(index) {
+            return new Promise((resolve) => {
+                if(!audioBuffers[index]) { resolve(); return; } // Fallback skip if failed load
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffers[index];
+                source.connect(audioContext.destination);
+                source.onended = resolve;
+                source.start(0);
+            });
+        }
+
+
+        // --- SIMULATION LOGIC ---
+        function sendMessage(textInput = null, isAuto = false) {
+            const input = document.getElementById('msg-input');
+            const text = textInput || input.value;
+            if(!text) return;
+            if(!isAuto) input.value = '';
+
+            // Alice UI
+            addBubble('alice-chat', text, true);
+            if(!isAuto) log("> Gateway received packet.");
+
+            // Animation
+            const alice = document.getElementById('box-alice').getBoundingClientRect();
+            const server = document.getElementById('box-server').getBoundingClientRect();
+            const bob = document.getElementById('box-bob').getBoundingClientRect();
+            const packet = document.getElementById('packet');
+
+            packet.style.display = 'block';
+            packet.style.top = (alice.top + alice.height/2) + 'px';
+            packet.style.left = (alice.left + alice.width/2) + 'px';
+
+            // Alice -> Server
+            setTimeout(() => {
+                packet.style.top = (server.top + server.height/2) + 'px';
+                packet.style.left = (server.left + server.width/2) + 'px';
+                
+                highlightComp('comp-gateway');
+                
+                setTimeout(() => {
+                    highlightComp('comp-mnesia');
+                    
+                    if(isBobOnline) {
+                        log("> Mnesia: User Online. Routing...");
+                        // Server -> Bob
+                        setTimeout(() => {
+                            packet.style.top = (bob.top + bob.height/2) + 'px';
+                            packet.style.left = (bob.left + bob.width/2) + 'px';
+                            
+                            setTimeout(() => {
+                                packet.style.display = 'none';
+                                addBubble('bob-chat', text, false);
+                                log("> Delivered. Deleting from memory.");
+                            }, 500);
+                        }, 500);
+                    } else {
+                        log("> Mnesia: User Offline. Storing in Cassandra.");
+                        highlightComp('comp-cassandra');
+                        packet.style.display = 'none';
+                        offlineQueue.push(text);
+                    }
+                }, 600);
+            }, 500);
+        }
+
+        function toggleBob() {
+            isBobOnline = !isBobOnline;
+            const btn = document.getElementById('bob-status-btn');
+            const overlay = document.getElementById('bob-overlay');
+            
+            if(isBobOnline) {
+                btn.innerText = "Status: Online";
+                btn.className = "text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold border border-green-200";
+                overlay.classList.add('hidden');
+                
+                if(offlineQueue.length > 0) {
+                    log("> User Online. Delivering queued messages...");
+                    offlineQueue.forEach((msg, i) => setTimeout(() => addBubble('bob-chat', msg, false), i*500));
+                    offlineQueue = [];
+                }
+            } else {
+                btn.innerText = "Status: Offline";
+                btn.className = "text-xs bg-red-100 text-red-800 px-3 py-1 rounded-full font-bold border border-red-200";
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+
+        function addBubble(id, text, isMe) {
+            const div = document.getElementById(id);
+            const html = `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="${isMe ? 'bg-[#d9fdd3]' : 'bg-white'} p-2 px-3 rounded-lg shadow-sm max-w-[80%] text-sm rounded-${isMe ? 'tr' : 'tl'}-none">
+                        ${text}
+                        <div class="text-[10px] text-gray-500 text-right mt-1">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>
+                </div>`;
+            div.insertAdjacentHTML('beforeend', html);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        function log(msg) {
+            const l = document.getElementById('logs');
+            l.insertAdjacentHTML('beforeend', `<div>${msg}</div>`);
+            l.scrollTop = l.scrollHeight;
+        }
+
+        function highlightComp(id) {
+            const el = document.getElementById(id);
+            el.classList.add('border-green-500', 'bg-gray-700');
+            setTimeout(() => el.classList.remove('border-green-500', 'bg-gray-700'), 400);
+        }
+
+        // --- EXPLAINER LOGIC (FAST) ---
+        async function startExplainer() {
+            if(isExplaining) return;
+            isExplaining = true;
+            const btn = document.getElementById('explain-btn');
+            btn.classList.add('opacity-50');
+
+            // Reset
+            document.getElementById('alice-chat').innerHTML = '';
+            document.getElementById('bob-chat').innerHTML = '';
+
+            const sequence = [
+                { id: 'box-alice', action: () => document.getElementById('msg-input').value = "Hello" },
+                { id: 'box-alice', action: () => sendMessage("Hello", true) },
+                { id: 'comp-gateway', action: null },
+                { id: 'comp-mnesia', action: null },
+                { id: 'box-bob', action: null },
+                { id: null, action: null }
+            ];
+
+            for(let i=0; i<sequence.length; i++) {
+                const step = sequence[i];
+                if(step.id) {
+                    document.getElementById(step.id).classList.add('explainer-highlight');
+                }
+                if(step.action) step.action();
+
+                // Play pre-loaded audio
+                await playBuffer(i);
+                
+                if(step.id) {
+                    document.getElementById(step.id).classList.remove('explainer-highlight');
+                }
+            }
+
+            isExplaining = false;
+            btn.classList.remove('opacity-50');
+        }
+
+        // --- MODAL LOGIC ---
+        function showModal(key) {
+            const d = content[key];
+            if(!d) return;
+            document.getElementById('modal-content').innerHTML = `
+                <h2 class="text-2xl font-bold mb-4 text-[#111b21]">${d.title}</h2>
+                <p class="text-gray-600 leading-relaxed text-lg">${d.text}</p>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        document.getElementById('modal').addEventListener('click', (e) => { if(e.target.id === 'modal') closeModal(); });
+
+    </script>
+</body>
+</html>
